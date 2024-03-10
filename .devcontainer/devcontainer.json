@@ -1,0 +1,26 @@
+{
+    "name": "${localWorkspaceFolderBasename}",
+    "image": "ghcr.io/spinalhdl/docker:master",
+    "runArgs": [
+        // set a human friendly machine name for the container
+        "--hostname=${localWorkspaceFolderBasename}"
+    ],
+    "customizations": {
+        "vscode": {
+            // IDs of extensions installed when the container is created.
+            "extensions": [
+                // Scala syntax, formatting and sbt IDE-like experience
+                "scalameta.metals",
+                // VHDL and Verilog syntax, formatting and FSM viewer
+                "teros-technology.teroshdl",
+                // Viewer for VCD wave trace files of simulations
+                "wavetrace.wavetrace"
+            ],
+            // Container specific settings.json values on container create.
+            "settings": {
+                // Slow down scrolling in intergrated terminal
+                "terminal.integrated.mouseWheelScrollSensitivity": 0.2
+            }
+        }
+    }
+}
