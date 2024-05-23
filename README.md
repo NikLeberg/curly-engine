@@ -65,19 +65,3 @@ Once the project structure is modified, update configurations:
 ### Update this README
 
 Of course you can replace/modify this file to help people with your own project!
-
-
-## Mill Support (Experimental)
-
-The [Mill build tool](https://com-lihaoyi.github.io/mill) can be installed and used instead of `sbt`.
-
-```sh
-// To generate the Verilog from the example
-mill projectname.runMain projectname.MyTopLevelVerilog
-
-// To generate the VHDL from the example
-mill projectname.runMain projectname.MyTopLevelVhdl
-
-// To run the testbench
-mill projectname.runMain projectname.MyTopLevelSim
-```
