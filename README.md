@@ -19,13 +19,13 @@ Once in the `SpinalTemplateSbt` directory, when tools are installed, the command
 
 ```sh
 // To generate the Verilog from the example
-sbt "runMain projectname.MyTopLevelVerilog"
+sbt "runMain curlyrv.MyTopLevelVerilog"
 
 // To generate the VHDL from the example
-sbt "runMain projectname.MyTopLevelVhdl"
+sbt "runMain curlyrv.MyTopLevelVhdl"
 
 // To run the testbench
-sbt "runMain projectname.MyTopLevelSim"
+sbt "runMain curlyrv.MyTopLevelSim"
 ```
 
 * The example hardware description is into `hw/spinal/projectname/MyTopLevel.scala`
@@ -35,18 +35,6 @@ When you really start working with SpinalHDL, it is recommended (both for comfor
 
 
 ## If you want to create a new project from this template
-
-### Change project name
-
-You might want to change the project name, which is currently `projectname`. To do so (let's say your actual project name is `myproject`; it must be all lowercase with no separators):
-
-* Update `build.sbt` and/or `build.sc` by replacing `projectname` by the name of your project `myproject` (1 occurrence in each file). The better is to replace in both (it will always work), but in some contexts you can keep only one of these two files:
-    * If you are sure all people only use `sbt`, you can replace only in `build.sbt` and remove `build.sc`
-    * If you are sure all people only use `mill`, you can replace only in `build.sc` and remove `build.sbt`
-    * Replace in both files for open-source project.
-* Put all your scala files into `hw/spinal/myproject/` (remove the unused `hw/spinal/projectname/` folder)
-* Start all your scala files with `package myproject`
-
 
 ### Change project structure
 
