@@ -7,10 +7,14 @@ val spinalCore = "com.github.spinalhdl" %% "spinalhdl-core" % spinalVersion
 val spinalLib = "com.github.spinalhdl" %% "spinalhdl-lib" % spinalVersion
 val spinalIdslPlugin = compilerPlugin("com.github.spinalhdl" %% "spinalhdl-idsl-plugin" % spinalVersion)
 
+val scalaTest = "org.scalatest" %% "scalatest" % "3.2.18" % Test
+
 lazy val curlyrv = (project in file("."))
   .settings(
     Compile / scalaSource := baseDirectory.value / "hw" / "spinal",
-    libraryDependencies ++= Seq(spinalCore, spinalLib, spinalIdslPlugin)
+    Test / scalaSource := baseDirectory.value / "test" / "spinal",
+    libraryDependencies ++= Seq(spinalCore, spinalLib, spinalIdslPlugin),
+    libraryDependencies += scalaTest
   )
 
 fork := true
