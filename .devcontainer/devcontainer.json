@@ -1,6 +1,6 @@
 {
     "name": "${localWorkspaceFolderBasename}",
-    "image": "ghcr.io/spinalhdl/docker:master",
+    "image": "ghcr.io/nikleberg/spinalhdl-with-ghdlyosys:0.1-dev-staging", // ghcr.io/spinalhdl/docker:master
     "runArgs": [
         // set a human friendly machine name for the container
         "--hostname=${localWorkspaceFolderBasename}"
