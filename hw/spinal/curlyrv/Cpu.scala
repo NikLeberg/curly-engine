@@ -38,8 +38,6 @@ case class Cpu(c: CpuConfig) extends CpuBase(c) {
   // addOp(IntegerAluOps(this))
 
   // TEMP START
-  addOp(PcPlus4Ops(this))
-
   addInstruction(M"1100111", M"000", M"0000000", InstructionTypes.instIType)
   addInstruction(M"0000011", M"000", M"0000000", InstructionTypes.instIType)
   addInstruction(M"0010011", M"000", M"0000000", InstructionTypes.instIType)
