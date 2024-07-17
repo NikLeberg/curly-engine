@@ -16,7 +16,7 @@ object Config {
 
   def sim = SimConfig.withConfig(spinal).withVcdWave // .withGhdl
 
-  def formal = FormalConfig.withConfig(spinal).withDebug
+  def formal = FormalConfig.withConfig(spinal.includeFormal).withDebug
 }
 
 case class Top() extends Component {
