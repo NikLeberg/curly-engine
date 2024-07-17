@@ -37,5 +37,5 @@ case class CpuPipelines(config: CpuConfig) extends Area {
 
   val ALU_RES = Payload(Bits(XLEN bits))
 
-  val ENABLE_WB = Payload(Bool)
+  val ENABLE_WB = Payload(Bool())
 }
