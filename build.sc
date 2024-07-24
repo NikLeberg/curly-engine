@@ -1,4 +1,4 @@
-import mill._, scalalib._
+import mill._, scalalib._, scalafmt._
 
 import $file.^.SpinalHDL.build
 import ^.SpinalHDL.build.{core => spinalCore}
@@ -8,7 +8,7 @@ import ^.SpinalHDL.build.{idslplugin => spinalIdslplugin}
 val spinalVers = "1.10.2a"
 val scalaVers = "2.12.18"
 
-object curlyrv extends RootModule with SbtModule {
+object curlyrv extends RootModule with SbtModule with ScalafmtModule {
   def scalaVersion = scalaVers
   def sources = T.sources(
     this.millSourcePath / "hw" / "spinal"
