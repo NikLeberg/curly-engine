@@ -1,0 +1,43 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  generate:
+    name: Generate RTL
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/nikleberg/spinalhdl-with-ghdlyosys:0.1-dev-staging
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate
+        run: mill run
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/nikleberg/spinalhdl-with-ghdlyosys:0.1-dev-staging
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test
+        run: mill test
+
+  lint:
+    name: Lint Sourcefiles
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/nikleberg/spinalhdl-with-ghdlyosys:0.1-dev-staging
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint
+        run: mill reformat
+      - uses: parkerbxyz/suggest-changes@v1
+        if: ${{github.ref_name != 'main'}}
+        with:
+          comment: Suggested changes from scalafmt.
+      - run: git diff --exit-code --quiet
