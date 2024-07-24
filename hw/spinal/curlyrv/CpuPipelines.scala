@@ -35,7 +35,11 @@ case class CpuPipelines(config: CpuConfig) extends Area {
 
   val RDD, RS1D, RS2D = Payload(SInt(XLEN bits)) // register values
 
-  val ALU_RES = Payload(Bits(XLEN bits))
+  // true if instruction reads or writes from regfile
+  val READ_RS1, READ_RS2, WRITE_RD = Payload(Bool())
 
-  val ENABLE_WB = Payload(Bool())
+  // set in ID stage whenever RSx != 0
+  val RS1_ZERO, RS2_ZERO = Payload(Bool())
+  
+  val ALU_RES = Payload(Bits(XLEN bits))
 }

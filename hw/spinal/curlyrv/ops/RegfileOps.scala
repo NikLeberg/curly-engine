@@ -19,18 +19,17 @@ case class RegfileOps(cpu: CpuBase) extends CpuBaseOps {
   import cpu.pipes._
   import cpu.config._
 
-  val RS1_NONZERO, RS2_NONZERO = Payload(Bool())
   val regfile = Mem(SInt(XLEN bits), 32)
 
   val decoder = new decode.Area {
-    RS1_NONZERO := RS1 =/= 0
-    RS2_NONZERO := RS2 =/= 0
+    RS1_ZERO := RS1 === 0
+    RS2_ZERO := RS2 === 0
 
-    RS1D := RS1_NONZERO ? regfile.readAsync(RS1) | 0
-    RS2D := RS2_NONZERO ? regfile.readAsync(RS2) | 0
+    RS1D := !RS1_ZERO ? regfile.readAsync(RS1) | 0
+    RS2D := !RS2_ZERO ? regfile.readAsync(RS2) | 0
   }
 
   val wb = new writeback.Area {
-    regfile.write(RD, RDD, isValid && ENABLE_WB)
+    regfile.write(RD, RDD, isValid && WRITE_RD)
   }
 }
