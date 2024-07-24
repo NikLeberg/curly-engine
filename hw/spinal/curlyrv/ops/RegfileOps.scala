@@ -4,6 +4,7 @@ import spinal.core._
 import spinal.lib.misc.pipeline._
 
 import curlyrv.CpuBase
+import curlyrv.InstructionTypes
 
 /** Registerfile Operation
   *
@@ -31,5 +32,47 @@ case class RegfileOps(cpu: CpuBase) extends CpuBaseOps {
 
   val wb = new writeback.Area {
     regfile.write(RD, RDD, isValid && WRITE_RD)
+  }
+
+  override def build(): Unit = {
+    val decoder = new decode.Area {
+      val readRs1, readRs2, writeRd = Bool()
+      switch(apply(OPCODE)) {
+        import InstructionTypes._
+        is(cpu.getOpcodeMask(instIType)) {
+          readRs1 := True
+          readRs2 := False
+          writeRd := True
+        }
+        is(cpu.getOpcodeMask(instSType)) {
+          readRs1 := True
+          readRs2 := True
+          writeRd := False
+        }
+        is(cpu.getOpcodeMask(instBType)) {
+          readRs1 := True
+          readRs2 := True
+          writeRd := False
+        }
+        is(cpu.getOpcodeMask(instUType)) {
+          readRs1 := False
+          readRs2 := False
+          writeRd := True
+        }
+        is(cpu.getOpcodeMask(instJType)) {
+          readRs1 := False
+          readRs2 := False
+          writeRd := True
+        }
+        default { // R-Type or any other
+          readRs1 := True
+          readRs2 := True
+          writeRd := True
+        }
+      }
+      READ_RS1 := readRs1
+      READ_RS2 := readRs2
+      WRITE_RD := writeRd
+    }
   }
 }
