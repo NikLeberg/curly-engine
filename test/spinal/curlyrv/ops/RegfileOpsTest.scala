@@ -13,9 +13,9 @@ case class RegfileOpsHarness() extends CpuBase(CpuConfig()) {
   import pipes._
 
   val io = new Bundle {
+    val opcode = in port Bits(7 bits)
     val rs1, rs2, rd = in port UInt(5 bits)
     val rdd = in port SInt(XLEN bits)
-    val wb = in port Bool()
     val rs1d, rs2d = out port SInt(XLEN bits)
   }.simPublic()
 
@@ -28,16 +28,22 @@ case class RegfileOpsHarness() extends CpuBase(CpuConfig()) {
 
   // build dummy pipeline around DUT to set and get payloads
   val decoder = new decode.Area {
+    OPCODE := io.opcode
     RS1 := io.rs1
     RS2 := io.rs2
     RD := io.rd
     RDD := io.rdd
-    ENABLE_WB := io.wb
   }
   val executer = new execute.Area {
     io.rs1d := RS1D
     io.rs2d := RS2D
   }
+  addInstruction(M"0000001", M"000", M"0000000", InstructionTypes.instBType)
+  addInstruction(M"0000010", M"000", M"0000000", InstructionTypes.instIType)
+  addInstruction(M"0000100", M"000", M"0000000", InstructionTypes.instJType)
+  addInstruction(M"0001000", M"000", M"0000000", InstructionTypes.instRType)
+  addInstruction(M"0010000", M"000", M"0000000", InstructionTypes.instSType)
+  addInstruction(M"0100000", M"000", M"0000000", InstructionTypes.instUType)
   build()
 }
 
@@ -53,32 +59,49 @@ class RegfileOpsSim extends AnyFunSuite {
       dut.clockDomain.doStimulus(10)
       dut.clockDomain.waitSampling(1)
 
-      // Get/set values direcly in the registerfile.
+      // Get/set values directly in the registerfile.
       def getReg(reg: Int): Int = { dut.regfileOps.regfile.getBigInt(reg).toInt }
       def setReg(reg: Int, value: BigInt): Unit = { dut.regfileOps.regfile.setBigInt(reg, value) }
 
       // Simulate sequence to read a register through rs1.
-      def readRs1(reg: Int): Int = {
+      def simRs1(reg: Int): Unit = {
         dut.io.rs1 #= reg
-        dut.clockDomain.waitRisingEdge(2) // decode + execute
-        dut.io.rs1d.toInt
+        dut.clockDomain.waitRisingEdge(1)
+        dut.io.rs1 #= 0
+      }
+      def getRs1d: Int = dut.io.rs1d.toInt
+      def readRs1(reg: Int): Int = {
+        simRs1(reg)
+        dut.clockDomain.waitRisingEdge(1)
+        getRs1d
       }
 
       // Simulate sequence to read a register through rs2.
-      def readRs2(reg: Int): Int = {
+      def simRs2(reg: Int): Unit = {
         dut.io.rs2 #= reg
-        dut.clockDomain.waitRisingEdge(2) // decode + execute
-        dut.io.rs2d.toInt
+        dut.clockDomain.waitRisingEdge(1)
+        dut.io.rs2 #= 0
+      }
+      def getRs2d: Int = dut.io.rs2d.toInt
+      def readRs2(reg: Int): Int = {
+        simRs2(reg)
+        dut.clockDomain.waitRisingEdge(1)
+        getRs2d
       }
 
       // Simulate sequence to write a register.
-      def writeRd(reg: Int, value: BigInt, wait: Boolean = true): Unit = {
+      def simRd(reg: Int, value: BigInt): Unit = {
         dut.io.rd #= reg
         dut.io.rdd #= value
-        dut.io.wb #= true
-        if (wait) {
-          dut.clockDomain.waitRisingEdge(5) // decode, execute, memory, writeback, sync
-        }
+        dut.io.opcode #= 0x08 // R-Type
+        dut.clockDomain.waitRisingEdge(1)
+        dut.io.rd #= 0
+        dut.io.rdd #= 0
+        dut.io.opcode #= 0x01 // B-Type
+      }
+      def writeRd(reg: Int, value: BigInt): Unit = {
+        simRd(reg, value)
+        dut.clockDomain.waitRisingEdge(4) // execute, memory, writeback, sync
       }
 
       // x0 reads always as zero
@@ -121,6 +144,20 @@ class RegfileOpsSim extends AnyFunSuite {
         val rs2 = readRs2(i)
         assert(rs2 == i, s"RD+RS2(reg x$i): write $i, but read $rs2")
       }
+
+      for (i <- 1 to 31) {
+        simRd(i, 0x05050505)
+        simRs1(i)
+        assert(getRs1d != 0x05050505, s"RD+RS1(reg x$i): should not read 0x05050505 yet")
+        simRs1(i)
+        assert(getRs1d != 0x05050505, s"RD+RS1(reg x$i): should not read 0x05050505 yet")
+        simRs1(i)
+        assert(getRs1d != 0x05050505, s"RD+RS1(reg x$i): should not read 0x05050505 yet")
+        simRs1(i)
+        assert(getRs1d != 0x05050505, s"RD+RS1(reg x$i): should not read 0x05050505 yet")
+        simRs1(i)
+        assert(getRs1d == 0x05050505, s"RD+RS1(reg x$i): should now read 0x05050505")
+      }
     }
   }
 }
@@ -133,11 +170,11 @@ class RegfileOpsFormal extends FormalFunSuite {
       .doVerify(new Component {
         setDefinitionName("RegfileOpsFormal")
         val dut = FormalDut(RegfileOpsHarness())
+        anyseq(dut.io.opcode)
         anyseq(dut.io.rs1)
         anyseq(dut.io.rs2)
         anyseq(dut.io.rd)
         anyseq(dut.io.rdd)
-        anyseq(dut.io.wb)
 
         assumeInitial(dut.clockDomain.isResetActive)
         val initDone = !initstate() && !dut.clockDomain.isResetActive
@@ -157,15 +194,15 @@ class RegfileOpsFormal extends FormalFunSuite {
         anyseq(anyRsData)
 
         val seqWriteZero =
-          (dut.io.rd === anyRsNum) :-> (dut.io.rdd === 0) :-> dut.io.wb
+          (dut.io.rd === anyRsNum) :-> (dut.io.rdd === 0) :-> (dut.io.opcode === B"0001000")
         val seqWriteData =
-          (dut.io.rd === anyRsNum) :-> (dut.io.rdd === anyRsData) :-> dut.io.wb
+          (dut.io.rd === anyRsNum) :-> (dut.io.rdd === anyRsData) :-> (dut.io.opcode === B"0001000")
         // Always write a zero first to ensure solver cannot just start with the
         // expected value in the registerfile at initialzation (for cover).
         val seqWrite = seqWriteZero :=> seqWriteData
         // Wait for the pipelined write to arrive in WB (IF, ID, EX, MEM, WB).
-        val seqWaitAndReadRs1 = True.repeat("=4") :=> (dut.io.rs1 === anyRsNum)
-        val seqWaitAndReadRs2 = True.repeat("=4") :=> (dut.io.rs2 === anyRsNum)
+        val seqWaitAndReadRs1 = True.repeat("*4") :=> (dut.io.rs1 === anyRsNum)
+        val seqWaitAndReadRs2 = True.repeat("*4") :=> (dut.io.rs2 === anyRsNum)
         val seqReadDataRs1 = (dut.io.rs1d === past(anyRsData, 5))
         val seqReadDataRs2 = (dut.io.rs2d === past(anyRsData, 5))
 
@@ -175,9 +212,10 @@ class RegfileOpsFormal extends FormalFunSuite {
         cover(seqInit :-> seqWrite :-> seqWaitAndReadRs2 :=> seqReadDataRs2)
 
         // Can only write with enabled writeback.
-        assert((seqInit :-> !dut.io.wb).next(4, stable(dut.regfileOps.regfile(1))))
-        cover(seqInit :-> !dut.io.wb :-> True.repeat("=4") :-> stable(dut.regfileOps.regfile(1)))
-        cover(seqInit :-> dut.io.wb :-> True.repeat("=4") :-> !stable(dut.regfileOps.regfile(1)))
+        // Writeback is enabled with R-Type but not with B-Type.
+        assert((seqInit :-> (dut.io.opcode === B"0000001")).next(4, stable(dut.regfileOps.regfile(1))))
+        cover(seqInit :-> (dut.io.opcode === B"0000001") :-> True.repeat("*4") :-> stable(dut.regfileOps.regfile(1)))
+        cover(seqInit :-> (dut.io.opcode === B"0001000") :-> True.repeat("*4") :-> !stable(dut.regfileOps.regfile(1)))
       })
   }
 }
