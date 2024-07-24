@@ -35,5 +35,8 @@ object curlyrv extends RootModule with SbtModule {
     def ivyDeps = Agg(
       ivy"org.scalatest::scalatest:3.2.18"
     )
+    def testOne(args: String*) = T.command {
+      super.runMain("org.scalatest.run", args: _*)
+    }
   }
 }
