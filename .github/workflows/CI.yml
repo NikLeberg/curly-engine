@@ -36,7 +36,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Lint
         run: mill reformat
-      - uses: parkerbxyz/suggest-changes@v1
+      - uses: parkerbxyz/suggest-changes@v2
         if: ${{github.ref_name != 'main'}}
         with:
           comment: Suggested changes from scalafmt.
